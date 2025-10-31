@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	<OutputType>Exe</OutputType>
+	<TargetFramework>net8.0</TargetFramework>
+	<ImplicitUsings>enable</ImplicitUsings>
+	<Nullable>enable</Nullable>
+	  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+	  <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)\GeneratedFiles</CompilerGeneratedFilesOutputPath>
+	  <ReportAnalyzer>true</ReportAnalyzer>
+  </PropertyGroup>
+
+	<Target Name="ListGeneratedFiles" AfterTargets="Build">
+		<Message Text="Generated files:" Importance="high" />
+		<Message Text="%(Compile.Identity)" Importance="high" />
+	</Target>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
+		<PackageReference Include="Shaunebu.Common.SignalRManager" Version="1.0.0" />
+		<PackageReference Include="Shaunebu.SignalRManager.HubGenerator" Version="1.0.3"/>
+	</ItemGroup>
+
+
+</Project>
