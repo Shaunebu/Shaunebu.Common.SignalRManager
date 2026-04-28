@@ -1,9 +1,15 @@
-﻿A comprehensive, enterprise-grade SignalR client library for .NET that provides robust connection management, advanced resilience patterns, and production-ready observability.
-![NuGet Version](https://img.shields.io/nuget/v/Shaunebu.Common.SignalRManager?color=blue&label=NuGet)
+A comprehensive, enterprise-grade SignalR client library for .NET that provides robust connection management, advanced resilience patterns, and production-ready observability.
 
-![NET Support](https://img.shields.io/badge/.NET%20-%3E%3D8.0-blueviolet) ![NET Support](https://img.shields.io/badge/.NET%20CORE-%3E%3D3.1-blueviolet) ![NET Support](https://img.shields.io/badge/.NET%20MAUI-%3E%3D%208.0-blueviolet) [![Support](https://img.shields.io/badge/support-buy%20me%20a%20coffee-FFDD00)](https://buymeacoffee.com/jcz65te)
+![Platform](https://img.shields.io/badge/Platform-.NET%208%2B-purple?logo=dotnet) ![License](https://img.shields.io/badge/License-MIT-lightgrey?logo=opensourceinitiative) ![Production Ready](https://img.shields.io/badge/Production-Ready-brightgreen?logo=check-circle) ![Performance](https://img.shields.io/badge/Performance-⚡%20High%20Throughput-ff6b6b) ![Developer Friendly](https://img.shields.io/badge/Developer%20Friendly-😊%20Fluent%20API-51cf66)
 
-![https://img.shields.io/badge/license-MIT-green](https://img.shields.io/badge/license-MIT-green)
+![NuGet Version](https://img.shields.io/nuget/v/Shaunebu.Common.SignalRManager?color=blue&label=NuGet) ![Downloads](https://img.shields.io/nuget/dt/Shaunebu.Common.SignalRManager?color=green&label=Downloads)
+
+![NET Support](https://img.shields.io/badge/.NET%20MAUI-%3E%3D8.0-512BD4?logo=dotnet) ![NET Core](https://img.shields.io/badge/.NET%20Core-%3E%3D3.1-blueviolet) ![CrossPlatform](https://img.shields.io/badge/Platforms-Android%20%7C%20iOS%20%7C%20Windows%20%7C%20macOS-00BFFF)
+![Architecture](https://img.shields.io/badge/Architecture-Resilience%20%7C%20DI%20%7C%20Telemetry-blueviolet)
+
+![Resilience](https://img.shields.io/badge/Resilience-Polly%20%7C%20Circuit%20Breaker-orange) ![Observability](https://img.shields.io/badge/Observability-%F0%9F%93%88%20Metrics%20%7C%20Logging-success) ![Offline](https://img.shields.io/badge/Offline%20Queue-✅%20Persistent-green) ![Hub Generator](https://img.shields.io/badge/Hub%20Generator-🎯%20Type--Safe%20APIs-blue)
+
+[![Support](https://img.shields.io/badge/support-buy%20me%20a%20coffee-FFDD00)](https://buymeacoffee.com/jcz65te)
 
 ✨ Features
 ----------
@@ -72,29 +78,33 @@
 dotnet add package Shaunebu.SignalRManager
 ```
 
-### Basic Usage
+### Type-Safe Usage (Recommended)
+
+> **Requires**: [Shaunebu.SignalR.HubGenerator](../Shaunebu.SignalR.HubGenerator) source generator and `[ServerMethod]`/`[ClientMethod]` attributes on your hub methods.
 
 ```csharp
-// Create and configure the manager
+// 1. Create and configure the manager
 var manager = new SignalRManagerBuilder()
     .WithHubUrl("https://api.example.com/hubs/chat")
-    .WithBatching(batchSize: 20, batchInterval: TimeSpan.FromMilliseconds(250))
-    .WithPollyRetryPolicy(maxRetries: 5)
+    .WithBatching(20, TimeSpan.FromMilliseconds(250))
+    .WithPollyRetryPolicy(5)
     .WithMetricsExporter(new ConsoleMetricsExporter())
-    .WithAutoReconnect(enabled: true, maxAttempts: 3)
+    .WithAutoReconnect(true, 3)
     .Build();
 
-// Initialize connection
+// 2. Initialize connection
 await manager.InitializeAsync();
 
-// Register message handlers
-manager.RegisterHandler<string, string>("ReceiveMessage", 
-    (user, message) => Console.WriteLine($"{user}: {message}"));
+// 3. Register type-safe handler (no magic strings)
+manager.RegisterHandler<object, string, string>(
+    nameof(IChatHubClient.ReceiveMessage),
+    (user, msg) => Console.WriteLine($"[Type-Safe Chat] {user}: {msg}"));
 
-// Send messages
-await manager.InvokeAsync("SendMessage", new object[] { "John", "Hello World!" });
+// 4. Type-safe method invocation (no parameter duplication)
+await manager.InvokeAsync<IChatHubServer>(
+    s => s.SendMessage("John", "Hello World!"));
 
-// Clean shutdown
+// 5. Clean shutdown
 await manager.ShutdownAsync();
 ```
 
@@ -454,28 +464,19 @@ await manager.RegisterHandler<IChatHubClient, string, string>(
 // Type-safe method invocation
 await manager.InvokeAsync<IChatHubServer, string, string>(
     s => s.SendMessage,
-    "John", 
-    "Hello from type-safe client!");
 
-// Multiple hubs support
-await manager.RegisterHandler<INotificationHubClient, string>(
-    c => c.ReceiveNotification,
-    async (msg) => Console.WriteLine($"Notification: {msg}"));
-```
+    ### Type-Safe Hub Example (with Source Generator)
 
-#### Server-Side Usage (Optional)
+    ```csharp
+    // Register handler using generated interface
+    manager.RegisterHandler<object, string, string>(
+        nameof(IChatHubClient.ReceiveMessage),
+        (user, msg) => Console.WriteLine($"[Type-Safe Chat] {user}: {msg}"));
 
-```csharp
-// Implement the generated interface on your hub (optional)
-public class ChatHub : Hub, IChatHubServer
-{
-    public async Task SendMessage(string user, string message)
-    {
-        // Your implementation
-        await Clients.All.SendAsync("ReceiveMessage", user, message);
-    }
-    
-    public async Task JoinGroup(string groupName)
+    // Type-safe method invocation
+    await manager.InvokeAsync<IChatHubServer>(
+        s => s.SendMessage("Alice", "Hello from type-safe client!"));
+    ```
     {
         await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
     }
