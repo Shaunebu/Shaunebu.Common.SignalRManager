@@ -80,7 +80,7 @@ dotnet add package Shaunebu.SignalRManager
 
 ### Type-Safe Usage (Recommended)
 
-> **Requires**: [Shaunebu.SignalR.HubGenerator](../Shaunebu.SignalR.HubGenerator) source generator and `[ServerMethod]`/`[ClientMethod]` attributes on your hub methods.
+> **Requires**: [Shaunebu.SignalR.HubGenerator](https://www.nuget.org/packages/Shaunebu.SignalRManager.HubGenerator) source generator and `[ServerMethod]`/`[ClientMethod]` attributes on your hub methods.
 
 ```csharp
 // 1. Create and configure the manager
