@@ -1,4 +1,5 @@
 ﻿// See https://aka.ms/new-console-template for more information
+using Generated.Hubs;
 using Microsoft.Extensions.Logging;
 using Shaunebu.Common.SignalRManager.Abstractions;
 using Shaunebu.Common.SignalRManager.Enums;
@@ -8,9 +9,7 @@ using Shaunebu.Common.SignalRManager.Helpers;
 using Shaunebu.Common.SignalRManager.Models;
 using Shaunebu.Common.SignalRManager.Policies;
 using Shaunebu.Common.SignalRManager.Security;
-using Shaunebu.Common.SignalRManager.Client.Clients;
 using System.Text;
-
 
 Console.WriteLine("=== SignalRManager Library Test ===");
 var localUrl = "https://localhost:7068";
@@ -62,16 +61,15 @@ async Task TestBasicConnection()
 
         Console.WriteLine("✓ Connection established successfully");
 
-        // Use client-side typed wrappers
-        var hubFactory = new TypedHubClientFactory(manager);
-        var chatClient = hubFactory.CreateChatClient();
 
-        // Type-safe handler registration
-        chatClient.OnMessageReceived((user, msg) =>
-            Console.WriteLine($"[Type-Safe Chat] {user}: {msg}"));
+        // Type-safe handler registration using generated interface
+        manager.RegisterHandler<object, string, string>(
+            nameof(IChatHubClient.ReceiveMessage),
+            (user, msg) => Console.WriteLine($"[Type-Safe Chat] {user}: {msg}"));
 
-        // Type-safe method invocation
-        await chatClient.SendMessageAsync("Jorge", "Hola mundo from type-safe client!");
+        // Type-safe method invocation using generated interface
+        await manager.InvokeAsync<IChatHubServer>(
+            s => s.SendMessage("Jorge", "Hola mundo from type-safe client!"));
 
         Console.WriteLine("✓ Type-safe operations completed");
 
