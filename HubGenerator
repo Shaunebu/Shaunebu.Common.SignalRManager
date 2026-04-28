@@ -1,0 +1,444 @@
+A powerful Roslyn Source Generator that automatically creates strongly-typed interfaces for your SignalR hubs, eliminating magic strings and providing compile-time safety for both client and server development.
+
+![Platform](https://img.shields.io/badge/Platform-.NET%208%2B-purple?logo=dotnet) ![License](https://img.shields.io/badge/License-MIT-lightgrey?logo=opensourceinitiative) ![Production Ready](https://img.shields.io/badge/Production-Ready-brightgreen?logo=check-circle) ![Performance](https://img.shields.io/badge/Performance-🚀%20Compile--Time%20Fast-ff6b6b) ![Developer Friendly](https://img.shields.io/badge/Developer%20Friendly-😊%20Zero%20Runtime%20Overhead-51cf66)
+
+![NuGet Version](https://img.shields.io/nuget/v/Shaunebu.SignalRManager.HubGenerator?color=blue&label=NuGet) ![Downloads](https://img.shields.io/nuget/dt/Shaunebu.SignalRManager.HubGenerator?color=green&label=Downloads)
+
+![NET Support](https://img.shields.io/badge/.NET%20MAUI-%3E%3D8.0-512BD4?logo=dotnet) ![NET Core](https://img.shields.io/badge/.NET%20Core-%3E%3D3.1-blueviolet) ![CrossPlatform](https://img.shields.io/badge/Platforms-Any%20Project%20Type-00BFFF)
+![Architecture](https://img.shields.io/badge/Architecture-Roslyn%20Source%20Generator%20%7C%20Compile--Time-blueviolet)
+
+![TypeSafe](https://img.shields.io/badge/Type%20Safe-✅%20Strongly--Typed%20APIs-success) ![IntelliSense](https://img.shields.io/badge/IntelliSense-💡%20Full%20IDE%20Support-blue) ![MagicStrings](https://img.shields.io/badge/Magic%20Strings-❌%20Eliminated-red) ![Integration](https://img.shields.io/badge/Integration-🤝%20SignalRManager%20Compatible-orange)
+
+[![Support](https://img.shields.io/badge/support-buy%20me%20a%20coffee-FFDD00)](https://buymeacoffee.com/jcz65te)
+
+✨ Features
+----------
+
+### 🎯 Automatic Interface Generation
+
+*   **Zero Configuration** - Automatically detects all classes inheriting from `Hub`
+    
+*   **Dual Interfaces** - Generates both client and server interfaces
+    
+*   **Compile-Time Safety** - Eliminates runtime errors from magic strings
+    
+*   **IntelliSense Support** - Full IDE support with parameter checking
+    
+
+### 🔧 Smart Method Discovery
+
+*   **Attribute-Based Filtering** - Use `[ServerMethod]` and `[ClientMethod]` attributes
+    
+*   **Flexible Method Selection** - Choose which methods to include in interfaces
+    
+*   **Private Method Support** - Include private methods for client callbacks
+    
+
+### 🚀 Seamless Integration
+
+*   **No Runtime Dependencies** - Pure compile-time generation
+    
+*   **Works with Any SignalR Hub** - Compatible with existing hubs
+    
+*   **Fast Compilation** - Minimal impact on build times
+    
+*   **Debugging Support** - View generated files for troubleshooting
+    
+
+🚀 Quick Start
+--------------
+
+### Installation
+
+```bash
+dotnet add package Shaunebu.SignalRManager.HubGenerator
+```
+
+### Basic Usage
+
+#### 1. Create Your Hub Class
+
+```csharp
+using Microsoft.AspNetCore.SignalR;
+using Shaunebu.SignalR.HubGenerator;
+
+public class ChatHub : Hub
+{
+    [ServerMethod]
+    public Task SendMessage(string user, string message)
+    {
+        return Clients.All.SendAsync("ReceiveMessage", user, message);
+    }
+    
+    [ServerMethod]
+    public Task JoinGroup(string groupName)
+    {
+        return Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+    }
+    
+    [ClientMethod]
+    private Task ReceiveMessage(string user, string message) => Task.CompletedTask;
+    
+    [ClientMethod] 
+    private Task UserJoined(string user) => Task.CompletedTask;
+}
+```
+
+#### 2. Generated Interfaces (Automatically)
+
+**IChatHubServer.g.cs** (Server-side interface):
+
+```csharp
+using System.Threading.Tasks;
+
+namespace Generated.Hubs
+{
+    public interface IChatHubServer
+    {
+        Task SendMessage(string user, string message);
+        Task JoinGroup(string groupName);
+    }
+}
+```
+
+**IChatHubClient.g.cs** (Client-side interface):
+
+```csharp
+using System.Threading.Tasks;
+
+namespace Generated.Hubs
+{
+    public interface IChatHubClient
+    {
+        Task ReceiveMessage(string user, string message);
+        Task UserJoined(string user);
+    }
+}
+```
+
+#### 3. Use Generated Interfaces
+
+**Client-Side (Type-Safe, Modern Pattern)**:
+
+```csharp
+// Register handler using generated interface (no magic strings)
+manager.RegisterHandler<object, string, string>(
+    nameof(IChatHubClient.ReceiveMessage),
+    (user, msg) => Console.WriteLine($"[Type-Safe Chat] {user}: {msg}"));
+
+// Type-safe method invocation (no parameter duplication)
+await manager.InvokeAsync<IChatHubServer>(
+    s => s.SendMessage("John", "Hello World!"));
+
+// Type-safe group operations
+await manager.InvokeAsync<IChatHubServer>(
+    s => s.JoinGroup("general"));
+```
+
+**Server-Side (Optional)**:
+
+```csharp
+// Implement the generated interface for additional type safety
+public class ChatHub : Hub, IChatHubServer
+{
+    public async Task SendMessage(string user, string message)
+    {
+        // Compile-time checked implementation
+        await Clients.All.SendAsync("ReceiveMessage", user, message);
+    }
+    
+    public async Task JoinGroup(string groupName)
+    {
+        await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+    }
+}
+```
+
+📖 Comprehensive Examples
+-------------------------
+
+### Multiple Hubs Setup
+
+```csharp
+// ChatHub.cs
+public class ChatHub : Hub
+{
+    [ServerMethod]
+    public Task SendMessage(string user, string message) 
+        => Clients.All.SendAsync("ReceiveMessage", user, message);
+    
+    [ServerMethod]
+    public Task TypingNotification(string user, bool isTyping)
+        => Clients.Others.SendAsync("UserTyping", user, isTyping);
+    
+    [ClientMethod]
+    private Task ReceiveMessage(string user, string message) => Task.CompletedTask;
+    
+    [ClientMethod]
+    private Task UserTyping(string user, bool isTyping) => Task.CompletedTask;
+}
+
+// NotificationHub.cs  
+public class NotificationHub : Hub
+{
+    [ServerMethod]
+    public Task BroadcastNotification(string title, string message, string type)
+        => Clients.All.SendAsync("ReceiveNotification", title, message, type);
+    
+    [ServerMethod]
+    public Task SendToUser(string userId, string message)
+        => Clients.User(userId).SendAsync("ReceivePersonalNotification", message);
+    
+    [ClientMethod]
+    private Task ReceiveNotification(string title, string message, string type) => Task.CompletedTask;
+    
+    [ClientMethod]
+    private Task ReceivePersonalNotification(string message) => Task.CompletedTask;
+}
+```
+
+### Advanced Method Configuration
+
+```csharp
+public class AdvancedHub : Hub
+{
+    // Server methods (callable by clients)
+    [ServerMethod]
+    public Task<string> GetDataWithReturn(string filter) 
+    {
+        return Task.FromResult($"Filtered: {filter}");
+    }
+    
+    [ServerMethod]
+    public Task ProcessData(string data, int priority, bool urgent)
+    {
+        return Clients.Caller.SendAsync("ProcessingComplete", $"Processed: {data}");
+    }
+    
+    // Client methods (callable by server)
+    [ClientMethod]
+    private Task DataReceived(string result) => Task.CompletedTask;
+    
+    [ClientMethod] 
+    private Task ProcessingComplete(string message) => Task.CompletedTask;
+    
+    // This method won't be included in interfaces (no attribute)
+    public Task InternalMethod() => Task.CompletedTask;
+}
+```
+
+⚙️ Configuration
+----------------
+
+### Method Attributes
+
+```csharp
+// Use these attributes to control which methods are included
+
+[ServerMethod]  // Includes method in server interface (callable by clients)
+[ClientMethod]  // Includes method in client interface (callable by server)
+
+// Examples:
+public class ExampleHub : Hub
+{
+    [ServerMethod]
+    public Task ServerSideMethod(string param) { /* ... */ }
+    
+    [ClientMethod] 
+    private Task ClientSideMethod(string result) => Task.CompletedTask;
+    
+    // No attribute = not included in generated interfaces
+    public Task InternalMethod() { /* ... */ }
+}
+```
+
+### Project Configuration (Optional)
+
+For debugging generated files, add to your `.csproj`:
+
+```xml
+<PropertyGroup>
+  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+  <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
+</PropertyGroup>
+```
+
+🎯 Benefits
+-----------
+
+### 1. Compile-Time Safety
+
+```csharp
+// ✅ Compiles - type-safe
+await manager.InvokeAsync<IChatHubServer, string, string>(
+    s => s.SendMessage, "user", "message");
+
+// ❌ Compile error - method doesn't exist
+await manager.InvokeAsync<IChatHubServer, string, string>(
+    s => s.NonExistentMethod, "user", "message"); // ERROR!
+
+// ❌ Compile error - wrong parameter types
+await manager.InvokeAsync<IChatHubServer, int, string>(
+    s => s.SendMessage, 123, "message"); // ERROR!
+```
+
+### 2. Refactoring Support
+
+*   ✅ **Rename methods** safely with full reference updates
+    
+*   ✅ **Change parameters** with compile-time validation
+    
+*   ✅ **Find all references** works across client and server
+    
+*   ✅ **Safe deletions** with immediate compile errors
+    
+
+### 3. IntelliSense & Discovery
+
+*   ✅ **Full method completion** in IDE
+    
+*   ✅ **Parameter type hints** and documentation
+    
+*   ✅ **Method discovery** without checking hub source
+    
+*   ✅ **Navigation** between interface and implementation
+    
+
+🔧 Advanced Usage
+-----------------
+
+### Complex Parameter Types
+
+```csharp
+public class DataHub : Hub
+{
+    [ServerMethod]
+    public Task ProcessUserData(UserData user, DataFilter filter)
+        => Clients.Caller.SendAsync("DataProcessed", new ProcessResult());
+    
+    [ClientMethod]
+    private Task DataProcessed(ProcessResult result) => Task.CompletedTask;
+}
+
+// Generated interfaces handle complex types:
+public interface IDataHubServer
+{
+    Task ProcessUserData(UserData user, DataFilter filter);
+}
+
+public interface IDataHubClient  
+{
+    Task DataProcessed(ProcessResult result);
+}
+```
+
+### Async Method Support
+
+```csharp
+public class AsyncHub : Hub
+{
+    [ServerMethod]
+    public async Task<string> LongRunningOperationAsync(string input)
+    {
+        await Task.Delay(1000);
+        return $"Processed: {input}";
+    }
+    
+    [ClientMethod]
+    private async Task OperationCompletedAsync(string result) 
+    {
+        await SomeProcessing(result);
+    }
+}
+```
+
+📊 Generated Files Structure
+----------------------------
+
+```text
+YourProject/
+├── bin/
+│   └── Debug/
+│       └── net8.0/
+│           └── generated/
+│               └── Shaunebu.SignalRManager.HubGenerator/
+│                   ├── IChatHubClient.g.cs
+│                   ├── IChatHubServer.g.cs
+│                   ├── INotificationHubClient.g.cs
+│                   ├── INotificationHubServer.g.cs
+│                   └── ...
+└── ...
+```
+
+🛠️ Troubleshooting
+-------------------
+
+### Common Issues
+
+**1. Interfaces Not Generated**
+*   Ensure your class inherits from `Hub`
+    
+*   Check that methods have `[ServerMethod]` or `[ClientMethod]` attributes
+    
+*   Verify the NuGet package is installed
+    
+**2. Compilation Errors**
+*   Check method parameter types match between hub and usage
+    
+*   Ensure all referenced types are accessible
+    
+*   Verify async methods return `Task` or `Task<T>`
+    
+**3. Debugging Generated Code**
+
+```xml
+<!-- Enable generated file output -->
+<PropertyGroup>
+  <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+</PropertyGroup>
+```
+
+### Verification Steps
+
+1.  **Check Installation**: Ensure package is referenced in your project
+    
+2.  **Build Project**: Generated interfaces appear after first build
+    
+3.  **Verify Attributes**: Methods should have `[ServerMethod]` or `[ClientMethod]`
+    
+4.  **Check Output**: Look for generated files in output directory
+    
+
+🤝 Integration with SignalRManager
+----------------------------------
+
+### Perfect Companion
+
+This generator works seamlessly with **SignalRManager**:
+
+```csharp
+var manager = new SignalRManagerBuilder()
+    .WithHubUrl("https://api.example.com/hubs/chat")
+    .Build();
+
+await manager.InitializeAsync();
+
+// Use generated interfaces for type safety
+await manager.RegisterHandler<IChatHubClient, string, string>(
+    c => c.ReceiveMessage,
+    (user, msg) => Console.WriteLine($"{user}: {msg}"));
+
+await manager.InvokeAsync<IChatHubServer, string, string>(
+    s => s.SendMessage, 
+    "Alice", "Hello from type-safe client!");
+```
+
+
+🏆 Acknowledgments
+------------------
+
+*   Built with [Roslyn Source Generators](https://github.com/dotnet/roslyn)
+    
+*   Inspired by the need for type-safe SignalR development
+    
+*   Part of the SignalRManager ecosystem
